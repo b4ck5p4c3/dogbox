@@ -1,0 +1,196 @@
+<html lang="en">
+<head>
+    <title>DogBox</title>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <style>
+        * {
+            font-family: monospace;
+        }
+
+        .main {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .upload-box {
+            position: relative;
+            min-width: 300px;
+            min-height: 200px;
+            max-width: 300px;
+            border: 1px solid black;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #EEE;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .upload-box-active {
+            background: #FFF;
+        }
+
+        .upload-box-progress {
+            position: absolute;
+            background: #EEE;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 0;
+            pointer-events: none;
+        }
+
+        .upload-box-text {
+            font-size: x-large;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .upload-box-progress-text {
+            font-size: large;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .result-urls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .upload-guide {
+            margin-top: 20px;
+        }
+    </style>
+    <link rel="icon" href="/favicon.png" type="image/png"/>
+</head>
+<body>
+<main class="main">
+    <div>
+        <h1>DogBox - simple temporary file storage</h1>
+    </div>
+    <div>
+        All uploaded files will be deleted after {{retention-time}} seconds
+    </div>
+    <div class="upload-guide">
+        <pre>$ curl {{base-url}} --upload-file file.bin</pre>
+    </div>
+    <div><h2>Or</h2></div>
+    <div>
+        <div class="upload-box" id="upload-box">
+            <div class="upload-box-progress" id="upload-box-progress" hidden="hidden"></div>
+            <div class="upload-box-text" id="upload-box-text">Drag file here</div>
+            <div class="upload-box-progress-text" id="upload-box-progress-text" hidden="hidden"></div>
+        </div>
+    </div>
+    <div id="result-urls" class="result-urls"></div>
+    <script>
+        const uploadBox = document.getElementById("upload-box");
+        const uploadBoxText = document.getElementById("upload-box-text");
+        const uploadBoxProgressText = document.getElementById("upload-box-progress-text");
+        const uploadBoxProgress = document.getElementById("upload-box-progress");
+        const resultUrls = document.getElementById("result-urls");
+
+        function setUploadingProgressText(current, total) {
+            uploadBoxProgress.style.width = `${current / total * 100}%`;
+            uploadBoxProgressText.innerText = `${(Math.round(current / total * 10000) / 100).toFixed(2)}% ${current}/${total}`;
+        }
+
+        function pushResultUrl(url) {
+            const urlElement = document.createElement("a");
+            urlElement.href = url;
+            urlElement.innerText = url;
+            resultUrls.appendChild(urlElement);
+        }
+
+        let availableForDrop = true;
+
+        uploadBox.addEventListener("dragenter", e => {
+            if (!availableForDrop) {
+                return;
+            }
+            uploadBoxText.innerText = "Drop file here";
+            uploadBox.classList.add("upload-box-active");
+        });
+        uploadBox.addEventListener("dragover", e => {
+            if (!availableForDrop) {
+                return;
+            }
+            e.preventDefault();
+        })
+        uploadBox.addEventListener("drop", e => {
+            if (!availableForDrop) {
+                return;
+            }
+            if (e.dataTransfer.files.length === 0) {
+                uploadBoxText.innerText = "Drag file here";
+                uploadBox.classList.remove("upload-box-active");
+                return;
+            }
+            availableForDrop = false;
+            uploadBoxProgressText.hidden = false;
+            uploadBoxProgress.hidden = false;
+
+            e.preventDefault();
+            const files = e.dataTransfer.files;
+
+            (async () => {
+
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    uploadBoxText.innerText = `Uploading ${i + 1}/${files.length}...`;
+                    setUploadingProgressText(0, file.size);
+
+                    const arrayBuffer = await file.arrayBuffer();
+
+                    const resultUrl = await new Promise((resolve, reject) => {
+                        const request = new XMLHttpRequest();
+                        request.upload.addEventListener("progress", (progress) => {
+                            setUploadingProgressText(progress.loaded, progress.total);
+                        });
+                        request.addEventListener("error", e => reject(e));
+                        request.addEventListener("readystatechange", () => {
+                            if (request.readyState !== 4) {
+                                return;
+                            }
+
+                            if (request.status !== 200) {
+                                reject(new Error(`${request.status} ${request.responseText}`));
+                                return;
+                            }
+
+                            resolve(request.responseText.trim());
+                        })
+                        request.open("PUT", `/${encodeURIComponent(file.name)}`, true);
+                        request.send(arrayBuffer);
+                    });
+
+
+                    pushResultUrl(resultUrl);
+                }
+            })()
+                .catch(error => {
+                    alert(`Error: ${error}`);
+                })
+                .finally(() => {
+                    uploadBoxProgress.hidden = true;
+                    uploadBoxProgressText.hidden = true;
+                    availableForDrop = true;
+                    uploadBoxText.innerText = "Drag file here";
+                    uploadBox.classList.remove("upload-box-active");
+                });
+        });
+        uploadBox.addEventListener("dragleave", e => {
+            if (!availableForDrop) {
+                return;
+            }
+            uploadBoxText.innerText = "Drag file here";
+            uploadBox.classList.remove("upload-box-active");
+        });
+    </script>
+</main>
+</body>
+</html>

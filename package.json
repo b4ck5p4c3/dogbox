@@ -1,0 +1,21 @@
+{
+  "name": "dogbox",
+  "version": "1.0.0",
+  "description": "Simple temporary file storage",
+  "main": "src/main.ts",
+  "repository": "https://github.com/b4cksp4ce/dogbox",
+  "author": "radioegor146",
+  "license": "MIT",
+  "scripts": {
+    "start": "ts-node src/main.ts"
+  },
+  "dependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.2.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "ts-node": "^10.9.2",
+    "tslog": "^4.9.3",
+    "typescript": "^5.5.4"
+  }
+}
