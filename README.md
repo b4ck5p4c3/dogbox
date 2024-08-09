@@ -13,7 +13,7 @@ Simple temporary file storage
 ```yaml
 services:
   dogbox:
-    build: https://github.com/b4cksp4ce/dogbox.git
+    build: https://github.com/b4ck5p4c3/dogbox.git
     restart: always
     ports:
       - 127.0.0.1:3000:3000
