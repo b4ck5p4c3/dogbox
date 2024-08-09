@@ -79,3 +79,38 @@ app.use(((req, res, next) => {
 app.listen(PORT, () => {
     logger.info(`Server started on port ${PORT}`);
 });
+
+async function cleanOldFiles() {
+    logger.info(`Cleaning old files...`);
+    const directories = await fsPromises.readdir(STORAGE_PATH);
+    for (const directory of directories) {
+        const directoryPath = nodePath.join(STORAGE_PATH, directory);
+        const stats = await fsPromises.stat(directoryPath);
+        if (!stats.isDirectory()) {
+            continue;
+        }
+
+        if ((new Date().getTime() - stats.ctime.getTime()) < RETENTION_TIME) {
+            continue;
+        }
+
+        await fsPromises.rm(directoryPath, {
+            recursive: true
+        });
+
+        logger.info(`Removed ${directoryPath}`);
+    }
+    logger.info(`Cleaning done`);
+}
+
+function runCleaning() {
+    cleanOldFiles()
+        .catch(e => {
+            logger.error(e);
+        })
+        .finally(() => {
+            setTimeout(cleanOldFiles, RETENTION_TIME / 2);
+        });
+}
+
+runCleaning();
