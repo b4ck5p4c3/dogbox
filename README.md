@@ -24,7 +24,3 @@ services:
     volumes:
       - ./storage:/storage
 ```
-
-## Also, bugbounty program is active
-
-Contact me at [re146.dev](https://re146.dev), if you've found vulnerability, payouts are available
