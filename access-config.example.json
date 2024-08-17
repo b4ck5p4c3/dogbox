@@ -1,5 +1,5 @@
 {
-  "ipHeader": "X-Real-IP",
+  "ipHeader": "x-real-ip",
   "noAuthDownloadNetworks": {
     "whitelist": [
       "0.0.0.0/0",
