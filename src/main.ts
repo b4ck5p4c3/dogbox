@@ -21,6 +21,8 @@ const STORAGE_PATH = process.env.STORAGE_PATH ?? "/storage";
 const RETENTION_TIME = parseInt(process.env.RETENTION_TIME ?? "60000");
 const ACCESS_CONFIG_PATH = process.env.ACCESS_CONFIG_PATH ?? "/access-config.json";
 
+const EXTERNAL_URL = process.env.EXTERNAL_URL;
+
 let accessConfig: AccessConfig = {
     fallbackToRealIp: true,
     noAuthDownloadNetworks: {
@@ -48,8 +50,6 @@ const app = express();
 const indexTemplate = fs.readFileSync(nodePath.join(process.cwd(), "templates", "index.html")).toString("utf-8")
 
 function isIpAllowed(ip: string, config: ParsedNetworkAccessConfig): boolean {
-    logger.info(ip);
-
     if (!ipaddr.isValid(ip)) {
         return false;
     }
@@ -110,8 +110,6 @@ interface AccessCheckerConfig {
 
 function accessChecker(config: AccessCheckerConfig): RequestHandler {
     return (req, res, next) => {
-        logger.info(req.headers);
-        logger.info(config.ipHeader + " " + req.header(config.ipHeader!) + " " + req.ip);
         const ip = config.ipHeader ? (req.header(config.ipHeader) ??
             (config.fallbackToRealIp ? req.ip : undefined)) : req.ip;
 
@@ -185,7 +183,10 @@ app.get("/", (req, res) => {
     const url = new URL(`${req.protocol}://${req.get('host')}/`);
     res.header("Content-Type", "text/html; charset=utf-8").end(indexTemplate
         .replace("{{base-url}}", url.toString())
-        .replace("{{retention-time}}", Math.floor(RETENTION_TIME / 1000).toString()));
+        .replace("{{retention-time}}", Math.floor(RETENTION_TIME / 1000).toString())
+        .replace('"js_config_template_string"', JSON.stringify({
+            externalUrl: EXTERNAL_URL
+        })));
 });
 
 app.use(express.static(nodePath.join(process.cwd(), "static")));

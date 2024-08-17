@@ -8,6 +8,7 @@ Simple temporary file storage
 - `STORAGE_PATH` - path to file storage itself (usually something like `/storage` for simple volume mapping)
 - `RETENTION_TIME` - retention time for files in milliseconds
 - `ACCESS_CONFIG_PATH` - path to access config (for upload/download actions), example is available [in the repo](access-config.example.json)
+- `EXTERNAL_URL` - external DogBox url (optional)
 
 ## Example `docker-compose.yml`
 
