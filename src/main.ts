@@ -110,6 +110,7 @@ interface AccessCheckerConfig {
 
 function accessChecker(config: AccessCheckerConfig): RequestHandler {
     return (req, res, next) => {
+        logger.info(req.headers);
         logger.info(config.ipHeader + " " + req.header(config.ipHeader!) + " " + req.ip);
         const ip = config.ipHeader ? (req.header(config.ipHeader) ??
             (config.fallbackToRealIp ? req.ip : undefined)) : req.ip;
