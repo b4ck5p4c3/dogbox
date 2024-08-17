@@ -98,6 +98,58 @@
         .paste-button {
             width: 100%;
         }
+
+        button {
+            padding: 5px;
+            cursor: pointer;
+        }
+
+        input, textarea, button {
+            background-color: #EEE;
+            border: 1px solid #666;
+        }
+
+        button:hover {
+            background-color: #CCC;
+        }
+
+        button:active {
+            background-color: #E4E4E4;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            html {
+                background-color: #111;
+                color: white;
+            }
+
+            input, textarea, button {
+                background-color: #222;
+                border: 1px solid #666;
+                color: white;
+            }
+
+            button:hover {
+                background-color: #444;
+            }
+
+            button:active {
+                background-color: #111;
+            }
+
+            .upload-box {
+                background-color: #222;
+                border-color: #666;
+            }
+
+            .upload-box-progress {
+                background-color: #555;
+            }
+
+            a {
+                color: cornflowerblue;
+            }
+        }
     </style>
     <link rel="icon" href="/favicon.png" type="image/png"/>
 </head>

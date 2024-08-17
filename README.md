@@ -1,6 +1,6 @@
 # dogbox
 
-Simple temporary file storage
+Simple temporary file and paste storage
 
 ## Environment variables
 
