@@ -2,15 +2,18 @@
   "ipHeader": "X-Real-IP",
   "noAuthDownloadNetworks": {
     "whitelist": [
-      "0.0.0.0/0"
+      "0.0.0.0/0",
+      "::/0"
     ]
   },
   "noAuthUploadNetworks": {
     "whitelist": [
-      "10.0.0.0/16"
+      "10.0.0.0/16",
+      "127.0.0.0/8",
+      "::1/128"
     ]
   },
   "accounts": {
-    "test": "test"
+    "test": "$argon2id$v=19$m=12,t=3,p=1$MWpZeHFHY1FLN1FSMkZmOQ$8fI8/zySwjdCemAEkWu/yQ"
   }
 }

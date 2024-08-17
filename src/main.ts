@@ -7,6 +7,7 @@ import {promises as fsPromises} from "fs";
 import fs from "fs";
 import ipaddr from "ipaddr.js";
 import {AccessConfig, Accounts, parseAccessConfig, ParsedNetworkAccessConfig} from "./access-config";
+import argon2 from "argon2";
 
 dotenv.config({
     path: ".env.development"
@@ -122,13 +123,25 @@ function accessChecker(ipHeader: string | undefined, accounts: Accounts,
         }
 
         const [user, password] = parsedAuthData;
-
-        if (accounts[user] !== password) {
+        const passwordHash = accounts[user];
+        if (!passwordHash) {
             res.status(401).header("www-authenticate", 'Basic realm="DogBox"').end();
             return;
         }
 
-        next();
+        argon2.verify(passwordHash, password)
+            .then(match => {
+                if (!match) {
+                    res.status(401).header("www-authenticate", 'Basic realm="DogBox"').end();
+                    return;
+                }
+
+                next();
+            })
+            .catch(e => {
+                logger.error(`Failed to verify password: ${e}`);
+                res.status(500).end();
+            });
     };
 }
 
