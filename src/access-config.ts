@@ -15,6 +15,7 @@ export interface ParsedNetworkAccessConfig {
 export type Accounts = Record<string, string>;
 
 export interface AccessConfig {
+    fallbackToRealIp: boolean;
     ipHeader?: string;
     noAuthDownloadNetworks: NetworkAccessConfig;
     noAuthUploadNetworks: NetworkAccessConfig;
@@ -22,6 +23,7 @@ export interface AccessConfig {
 }
 
 export interface ParsedAccessConfig {
+    fallbackToRealIp: boolean;
     ipHeader?: string;
     noAuthDownloadNetworks: ParsedNetworkAccessConfig;
     noAuthUploadNetworks: ParsedNetworkAccessConfig;
@@ -52,6 +54,7 @@ function parseNetworkAccessConfig(config: NetworkAccessConfig): ParsedNetworkAcc
 
 export function parseAccessConfig(config: AccessConfig): ParsedAccessConfig {
     return {
+        fallbackToRealIp: config.fallbackToRealIp,
         ipHeader: config.ipHeader,
         accounts: config.accounts,
         noAuthDownloadNetworks: parseNetworkAccessConfig(config.noAuthDownloadNetworks),

@@ -98,17 +98,24 @@ function parseAuthorizationHeader(header?: string): [string, string] | undefined
     return [decodedCredentials[0], decodedCredentials[1]];
 }
 
-function accessChecker(ipHeader: string | undefined, accounts: Accounts,
-                       networkAccessConfig: ParsedNetworkAccessConfig): RequestHandler {
+interface AccessCheckerConfig {
+    ipHeader?: string;
+    fallbackToRealIp: boolean;
+    accounts: Accounts;
+    networkAccessConfig: ParsedNetworkAccessConfig;
+}
+
+function accessChecker(config: AccessCheckerConfig): RequestHandler {
     return (req, res, next) => {
-        const ip = ipHeader ? req.header(ipHeader) : req.ip;
+        const ip = config.ipHeader ? (req.header(config.ipHeader) ??
+            (config.fallbackToRealIp ? req.ip : undefined)) : req.ip;
+
         if (!ip) {
-            console.info('wut');
             res.status(401).end();
             return;
         }
 
-        if (isIpAllowed(ip, networkAccessConfig)) {
+        if (isIpAllowed(ip, config.networkAccessConfig)) {
             next();
             return;
         }
@@ -123,7 +130,7 @@ function accessChecker(ipHeader: string | undefined, accounts: Accounts,
         }
 
         const [user, password] = parsedAuthData;
-        const passwordHash = accounts[user];
+        const passwordHash = config.accounts[user];
         if (!passwordHash) {
             res.status(401).header("www-authenticate", 'Basic realm="DogBox"').end();
             return;
@@ -145,7 +152,10 @@ function accessChecker(ipHeader: string | undefined, accounts: Accounts,
     };
 }
 
-app.use(filesUrlPrefix, accessChecker(accessConfig.ipHeader, accessConfig.accounts, parsedAccessConfig.noAuthDownloadNetworks));
+app.use(filesUrlPrefix, accessChecker({
+    ...parsedAccessConfig,
+    networkAccessConfig: parsedAccessConfig.noAuthDownloadNetworks
+}));
 
 app.use(filesUrlPrefix, express.static(nodePath.join(STORAGE_PATH), {
     cacheControl: false,
@@ -161,7 +171,10 @@ app.use(filesUrlPrefix, express.static(nodePath.join(STORAGE_PATH), {
     }
 }));
 
-app.use(accessChecker(accessConfig.ipHeader, accessConfig.accounts, parsedAccessConfig.noAuthUploadNetworks));
+app.use(filesUrlPrefix, accessChecker({
+    ...parsedAccessConfig,
+    networkAccessConfig: parsedAccessConfig.noAuthUploadNetworks
+}));
 
 app.get("/", (req, res) => {
     const url = new URL(`${req.protocol}://${req.get('host')}/`);
