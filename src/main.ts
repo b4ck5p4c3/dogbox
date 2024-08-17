@@ -22,6 +22,7 @@ const RETENTION_TIME = parseInt(process.env.RETENTION_TIME ?? "60000");
 const ACCESS_CONFIG_PATH = process.env.ACCESS_CONFIG_PATH ?? "/access-config.json";
 
 let accessConfig: AccessConfig = {
+    fallbackToRealIp: true,
     noAuthDownloadNetworks: {
         blacklist: ["0.0.0.0/0"]
     },
