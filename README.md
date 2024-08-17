@@ -7,6 +7,7 @@ Simple temporary file storage
 - `PORT` - web server listening port
 - `STORAGE_PATH` - path to file storage itself (usually something like `/storage` for simple volume mapping)
 - `RETENTION_TIME` - retention time for files in milliseconds
+- `ACCESS_CONFIG_PATH` - path to access config (for upload/download actions), example is available [in the repo](access-config.example.json)
 
 ## Example `docker-compose.yml`
 
@@ -23,3 +24,7 @@ services:
     volumes:
       - ./storage:/storage
 ```
+
+## Also, bugbounty program is active
+
+Contact me at [re146.dev](https://re146.dev), if you've found vulnerability, payouts are available

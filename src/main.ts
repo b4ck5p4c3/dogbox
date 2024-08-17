@@ -1,10 +1,12 @@
-import express from "express";
+import express, {RequestHandler} from "express";
 import {getLogger} from "./logger";
 import nodePath from "path";
 import dotenv from "dotenv";
 import {getRandomDirectory} from "./storage";
 import {promises as fsPromises} from "fs";
 import fs from "fs";
+import ipaddr from "ipaddr.js";
+import {AccessConfig, Accounts, parseAccessConfig, ParsedNetworkAccessConfig} from "./access-config";
 
 dotenv.config({
     path: ".env.development"
@@ -16,6 +18,26 @@ const logger = getLogger();
 const PORT = parseInt(process.env.PORT ?? "3000");
 const STORAGE_PATH = process.env.STORAGE_PATH ?? "/storage";
 const RETENTION_TIME = parseInt(process.env.RETENTION_TIME ?? "60000");
+const ACCESS_CONFIG_PATH = process.env.ACCESS_CONFIG_PATH ?? "/access-config.json";
+
+let accessConfig: AccessConfig = {
+    noAuthDownloadNetworks: {
+        blacklist: ["0.0.0.0/0"]
+    },
+    noAuthUploadNetworks: {
+        blacklist: ["0.0.0.0/0"]
+    },
+    accounts: {}
+};
+
+try {
+    accessConfig = JSON.parse(fs.readFileSync(ACCESS_CONFIG_PATH).toString("utf8"));
+    logger.info(`Loaded access config from: ${ACCESS_CONFIG_PATH}`);
+} catch (e) {
+    throw new Error(`Failed to parse access config: ${e}`);
+}
+
+const parsedAccessConfig = parseAccessConfig(accessConfig);
 
 const filesUrlPrefix = "/files";
 
@@ -23,14 +45,95 @@ const app = express();
 
 const indexTemplate = fs.readFileSync(nodePath.join(process.cwd(), "templates", "index.html")).toString("utf-8")
 
-app.get("/", (req, res) => {
-    const url = new URL(`${req.protocol}://${req.get('host')}/`);
-    res.header("Content-Type", "text/html; charset=utf-8").end(indexTemplate
-        .replace("{{base-url}}", url.toString())
-        .replace("{{retention-time}}", Math.floor(RETENTION_TIME / 1000).toString()));
-});
+function isIpAllowed(ip: string, config: ParsedNetworkAccessConfig): boolean {
+    if (!ipaddr.isValid(ip)) {
+        return false;
+    }
+    const parsedIp = ipaddr.process(ip);
 
-app.use(express.static(nodePath.join(process.cwd(), "static")));
+    if (config.blacklist) {
+        if (ipaddr.subnetMatch(parsedIp, {
+            "match": config.blacklist
+        }, "no-match") === "match") {
+            return false;
+        }
+    }
+    if (config.whitelist) {
+        return ipaddr.subnetMatch(parsedIp, {
+            "match": config.whitelist
+        }, "no-match") === "match";
+
+    }
+    return true;
+}
+
+function parseAuthorizationHeader(header?: string): [string, string] | undefined {
+    if (!header) {
+        return undefined;
+    }
+
+    const parts = header.split(" ").map(item => item.trim()).filter(item => item);
+    if (parts.length !== 2) {
+        return undefined;
+    }
+
+    if (parts[0] !== "Basic") {
+        return undefined;
+    }
+
+    let credentials: string;
+
+    try {
+        credentials = Buffer.from(parts[1], "base64").toString("utf8");
+    } catch (e) {
+        return undefined;
+    }
+
+    const decodedCredentials = credentials.split(":");
+    if (decodedCredentials.length !== 2) {
+        return;
+    }
+
+    return [decodedCredentials[0], decodedCredentials[1]];
+}
+
+function accessChecker(ipHeader: string | undefined, accounts: Accounts,
+                       networkAccessConfig: ParsedNetworkAccessConfig): RequestHandler {
+    return (req, res, next) => {
+        const ip = ipHeader ? req.header(ipHeader) : req.ip;
+        if (!ip) {
+            console.info('wut');
+            res.status(401).end();
+            return;
+        }
+
+        if (isIpAllowed(ip, networkAccessConfig)) {
+            next();
+            return;
+        }
+
+        const authorizationHeader = req.header("authorization");
+
+        const parsedAuthData = parseAuthorizationHeader(authorizationHeader);
+
+        if (!parsedAuthData) {
+            res.status(401).header("www-authenticate", 'Basic realm="DogBox"').end();
+            return;
+        }
+
+        const [user, password] = parsedAuthData;
+
+        if (accounts[user] !== password) {
+            res.status(401).header("www-authenticate", 'Basic realm="DogBox"').end();
+            return;
+        }
+
+        next();
+    };
+}
+
+app.use(filesUrlPrefix, accessChecker(accessConfig.ipHeader, accessConfig.accounts, parsedAccessConfig.noAuthDownloadNetworks));
+
 app.use(filesUrlPrefix, express.static(nodePath.join(STORAGE_PATH), {
     cacheControl: false,
     dotfiles: "allow",
@@ -44,6 +147,17 @@ app.use(filesUrlPrefix, express.static(nodePath.join(STORAGE_PATH), {
             encodeURIComponent(nodePath.basename(path))}`);
     }
 }));
+
+app.use(accessChecker(accessConfig.ipHeader, accessConfig.accounts, parsedAccessConfig.noAuthUploadNetworks));
+
+app.get("/", (req, res) => {
+    const url = new URL(`${req.protocol}://${req.get('host')}/`);
+    res.header("Content-Type", "text/html; charset=utf-8").end(indexTemplate
+        .replace("{{base-url}}", url.toString())
+        .replace("{{retention-time}}", Math.floor(RETENTION_TIME / 1000).toString()));
+});
+
+app.use(express.static(nodePath.join(process.cwd(), "static")));
 
 app.use(((req, res, next) => {
     if (req.method !== "PUT") {

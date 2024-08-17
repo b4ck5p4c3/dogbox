@@ -1,0 +1,16 @@
+{
+  "ipHeader": "X-Real-IP",
+  "noAuthDownloadNetworks": {
+    "whitelist": [
+      "0.0.0.0/0"
+    ]
+  },
+  "noAuthUploadNetworks": {
+    "whitelist": [
+      "10.0.0.0/16"
+    ]
+  },
+  "accounts": {
+    "test": "test"
+  }
+}
