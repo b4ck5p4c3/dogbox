@@ -48,14 +48,13 @@ const filesUrlPrefix = "/files";
 
 const app = express();
 
-if (parsedAccessConfig.trustProxy) {
-    app.set("trust proxy", true);
+if (parsedAccessConfig.trustProxy !== false) {
+    app.set("trust proxy", parsedAccessConfig.trustProxy);
 }
 
 const indexTemplate = fs.readFileSync(nodePath.join(process.cwd(), "templates", "index.html")).toString("utf-8")
 
 function isIpAllowed(ip: string, config: ParsedNetworkAccessConfig): boolean {
-    console.info(ip);
     if (!ipaddr.isValid(ip)) {
         return false;
     }
@@ -69,7 +68,6 @@ function isIpAllowed(ip: string, config: ParsedNetworkAccessConfig): boolean {
         }
     }
     if (config.whitelist) {
-        console.info(ip, config.whitelist[0]);
         return ipaddr.subnetMatch(parsedIp, {
             "match": config.whitelist
         }, "no-match") === "match";
@@ -187,7 +185,6 @@ app.use(accessChecker({
 }));
 
 app.get("/", (req, res) => {
-    logger.info(req.ip + " " + req.protocol + " " + JSON.stringify(req.headers, undefined, 4));
     const url = new URL(`${req.protocol}://${req.get('host')}/`);
     res.header("Content-Type", "text/html; charset=utf-8").end(indexTemplate
         .replace("{{base-url}}", url.toString())

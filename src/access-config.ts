@@ -20,7 +20,7 @@ export interface AccessConfig {
     noAuthDownloadNetworks: NetworkAccessConfig;
     noAuthUploadNetworks: NetworkAccessConfig;
     accounts: Accounts;
-    trustProxy: boolean;
+    trustProxy: boolean | string;
 }
 
 export interface ParsedAccessConfig {
@@ -29,7 +29,7 @@ export interface ParsedAccessConfig {
     noAuthDownloadNetworks: ParsedNetworkAccessConfig;
     noAuthUploadNetworks: ParsedNetworkAccessConfig;
     accounts: Accounts;
-    trustProxy: boolean;
+    trustProxy: boolean | string;
 }
 
 function parseNetworkAccessList(list?: string[]): CIDR[] | undefined {
