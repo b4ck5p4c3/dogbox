@@ -68,6 +68,7 @@ function isIpAllowed(ip: string, config: ParsedNetworkAccessConfig): boolean {
         }
     }
     if (config.whitelist) {
+        console.info(ip, config.whitelist[0]);
         return ipaddr.subnetMatch(parsedIp, {
             "match": config.whitelist
         }, "no-match") === "match";
