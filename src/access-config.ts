@@ -61,5 +61,6 @@ export function parseAccessConfig(config: AccessConfig): ParsedAccessConfig {
         accounts: config.accounts,
         noAuthDownloadNetworks: parseNetworkAccessConfig(config.noAuthDownloadNetworks),
         noAuthUploadNetworks: parseNetworkAccessConfig(config.noAuthUploadNetworks),
+        trustProxy: config.trustProxy,
     };
 }
