@@ -180,6 +180,7 @@ app.use(accessChecker({
 }));
 
 app.get("/", (req, res) => {
+    logger.info(JSON.stringify(req.headers, undefined, 4));
     const url = new URL(`${req.protocol}://${req.get('host')}/`);
     res.header("Content-Type", "text/html; charset=utf-8").end(indexTemplate
         .replace("{{base-url}}", url.toString())
