@@ -49,7 +49,7 @@ const filesUrlPrefix = "/files";
 const app = express();
 
 if (parsedAccessConfig.trustProxy) {
-    app.use("trust proxy");
+    app.set("trust proxy", true);
 }
 
 const indexTemplate = fs.readFileSync(nodePath.join(process.cwd(), "templates", "index.html")).toString("utf-8")
