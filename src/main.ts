@@ -31,7 +31,8 @@ let accessConfig: AccessConfig = {
     noAuthUploadNetworks: {
         blacklist: ["0.0.0.0/0"]
     },
-    accounts: {}
+    accounts: {},
+    trustProxy: false
 };
 
 try {
@@ -46,6 +47,10 @@ const parsedAccessConfig = parseAccessConfig(accessConfig);
 const filesUrlPrefix = "/files";
 
 const app = express();
+
+if (parsedAccessConfig.trustProxy) {
+    app.use("trust proxy");
+}
 
 const indexTemplate = fs.readFileSync(nodePath.join(process.cwd(), "templates", "index.html")).toString("utf-8")
 

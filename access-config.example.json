@@ -1,6 +1,7 @@
 {
   "ipHeader": "x-real-ip",
   "fallbackToRealIp": true,
+  "trustProxy": false,
   "noAuthDownloadNetworks": {
     "whitelist": [
       "0.0.0.0/0",
