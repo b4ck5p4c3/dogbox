@@ -55,6 +55,7 @@ if (parsedAccessConfig.trustProxy) {
 const indexTemplate = fs.readFileSync(nodePath.join(process.cwd(), "templates", "index.html")).toString("utf-8")
 
 function isIpAllowed(ip: string, config: ParsedNetworkAccessConfig): boolean {
+    console.info(ip);
     if (!ipaddr.isValid(ip)) {
         return false;
     }
